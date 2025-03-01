@@ -1,280 +1,151 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog, scrolledtext
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from tkinter.font import Font
+from tkinter import messagebox, simpledialog, filedialog, ttk
+from tkcalendar import Calendar
+import json
+from ttkthemes import ThemedStyle
 
-# Function to convert numbers to Roman numerals
-def to_roman(num):
-    val = [
-        1000, 900, 500, 400,
-        100, 90, 50, 40,
-        10, 9, 5, 4,
-        1
-    ]
-    syms = [
-        "M", "CM", "D", "CD",
-        "C", "XC", "L", "XL",
-        "X", "IX", "V", "IV",
-        "I"
-    ]
-    roman_num = ''
-    i = 0
-    while num > 0:
-        for _ in range(num // val[i]):
-            roman_num += syms[i]
-            num -= val[i]
-        i += 1
-    return roman_num
-
-class TaskManagerApp:
+class TaskManager:
     def __init__(self, root):
         self.root = root
-        self.root.title("Advanced Task Manager")
-        self.root.geometry("1200x800")
-        self.root.minsize(1200, 800)
+        self.root.title("Task Manager")
         
-        # Apply a modern theme
-        self.style = ttk.Style(theme="cosmo")
-        
-        # Custom fonts
-        self.title_font = Font(family="Helvetica", size=18, weight="bold")
-        self.button_font = Font(family="Helvetica", size=12)
-        self.text_font = Font(family="Courier New", size=12)
-        
-        # List to store tasks
         self.tasks = []
+
+        # Set the style for the application
+        style = ThemedStyle(root)
+        style.set_theme("radiance")
         
-        # Create the main window
-        self.create_widgets()
+        self.style = ttk.Style()
+        self.style.configure('TButton', font=('Helvetica', 12), padding=10)
+        self.style.configure('TLabel', font=('Helvetica', 12))
+        self.style.configure('TEntry', font=('Helvetica', 12))
+        self.style.configure('TListbox', font=('Helvetica', 12))
+
+        self.frame = ttk.Frame(root, padding=20)
+        self.frame.pack(fill=tk.BOTH, expand=True)
+
+        # Sidebar
+        self.sidebar = ttk.Frame(self.frame, width=200, relief=tk.SUNKEN)
+        self.sidebar.grid(row=0, column=0, sticky="ns")
+
+        self.main_area = ttk.Frame(self.frame)
+        self.main_area.grid(row=0, column=1, sticky="nsew")
+
+        self.frame.grid_rowconfigure(0, weight=1)
+        self.frame.grid_columnconfigure(1, weight=1)
+
+        # Task Listbox
+        self.task_listbox = tk.Listbox(self.main_area, height=15, width=50, font=('Helvetica', 12))
+        self.task_listbox.grid(row=0, column=0, columnspan=4, pady=20)
         
-    def create_widgets(self):
-        # Main container
-        self.main_container = ttk.Frame(self.root)
-        self.main_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        self.task_listbox.bind("<Button-1>", self.on_start_drag)
+        self.task_listbox.bind("<B1-Motion>", self.on_dragging)
+        self.task_listbox.bind("<ButtonRelease-1>", self.on_drop)
         
-        # Title label
-        self.title_label = ttk.Label(self.main_container, text="Task Manager", font=self.title_font)
-        self.title_label.pack(pady=10)
-        
-        # Task list frame
-        self.task_frame = ttk.LabelFrame(self.main_container, text="Tasks", padding=10)
-        self.task_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        # Listbox to display tasks
-        self.task_listbox = tk.Listbox(self.task_frame, width=80, height=15, font=self.text_font, selectmode=tk.SINGLE)
-        self.task_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        # Scrollbar for the listbox
-        self.scrollbar = ttk.Scrollbar(self.task_frame, orient=tk.VERTICAL, command=self.task_listbox.yview)
-        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Attach scrollbar to listbox
-        self.task_listbox.config(yscrollcommand=self.scrollbar.set)
-        
-        # Enable drag-and-drop for the listbox
-        self.task_listbox.bind("<ButtonPress-1>", self.on_drag_start)
-        self.task_listbox.bind("<B1-Motion>", self.on_drag_motion)
-        self.task_listbox.bind("<ButtonRelease-1>", self.on_drag_release)
-        
-        # Button frame
-        self.button_frame = ttk.Frame(self.main_container)
-        self.button_frame.pack(fill=tk.X, pady=10)
-        
-        # Buttons for adding, editing, and deleting tasks
-        self.add_button = ttk.Button(self.button_frame, text="Add Task", command=self.add_task, bootstyle=SUCCESS, width=15)
-        self.add_button.pack(side=tk.LEFT, padx=5)
-        
-        self.edit_button = ttk.Button(self.button_frame, text="Edit Task", command=self.edit_task, bootstyle=INFO, width=15)
-        self.edit_button.pack(side=tk.LEFT, padx=5)
-        
-        self.delete_button = ttk.Button(self.button_frame, text="Delete Task", command=self.delete_task, bootstyle=DANGER, width=15)
-        self.delete_button.pack(side=tk.LEFT, padx=5)
-        
-        # Filter buttons
-        self.filter_frame = ttk.LabelFrame(self.main_container, text="Filter Tasks", padding=10)
-        self.filter_frame.pack(fill=tk.X, pady=10)
-        
-        self.filter_all_button = ttk.Button(self.filter_frame, text="All Tasks", command=self.filter_all_tasks, bootstyle=SECONDARY, width=15)
-        self.filter_all_button.pack(side=tk.LEFT, padx=5)
-        
-        self.filter_high_button = ttk.Button(self.filter_frame, text="High Priority", command=lambda: self.filter_tasks_by_priority("High"), bootstyle=DANGER, width=15)
-        self.filter_high_button.pack(side=tk.LEFT, padx=5)
-        
-        self.filter_medium_button = ttk.Button(self.filter_frame, text="Medium Priority", command=lambda: self.filter_tasks_by_priority("Medium"), bootstyle=WARNING, width=15)
-        self.filter_medium_button.pack(side=tk.LEFT, padx=5)
-        
-        self.filter_low_button = ttk.Button(self.filter_frame, text="Low Priority", command=lambda: self.filter_tasks_by_priority("Low"), bootstyle=SUCCESS, width=15)
-        self.filter_low_button.pack(side=tk.LEFT, padx=5)
-        
-        # Deadline input frame
-        self.deadline_frame = ttk.LabelFrame(self.main_container, text="Set Deadline", padding=10)
-        self.deadline_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        # Entry widget for deadline input
-        self.deadline_entry = ttk.Entry(self.deadline_frame, width=20, font=self.text_font)
-        self.deadline_entry.pack(pady=10)
-        
-        # Button to set deadline
-        self.set_deadline_button = ttk.Button(self.deadline_frame, text="Set Deadline", command=self.set_deadline, bootstyle=WARNING, width=20)
-        self.set_deadline_button.pack(pady=10)
-        
-        # Data input frame
-        self.data_frame = ttk.LabelFrame(self.main_container, text="Data Input", padding=10)
-        self.data_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        # Text widget for multi-line input with Roman numerals
-        self.data_text = scrolledtext.ScrolledText(self.data_frame, wrap=tk.WORD, width=80, height=10, font=self.text_font)
-        self.data_text.pack(fill=tk.BOTH, expand=True)
-        
-        # Button to convert numbers to Roman numerals
-        self.roman_button = ttk.Button(self.data_frame, text="Convert to Roman", command=self.convert_to_roman, bootstyle=WARNING, width=20)
-        self.roman_button.pack(pady=10)
-        
-        # Menu bar
-        self.menu_bar = tk.Menu(self.root)
-        self.root.config(menu=self.menu_bar)
-        
-        # File menu
-        self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.menu_bar.add_cascade(label="File", menu=self.file_menu)
+        # Buttons
+        self.add_button = ttk.Button(self.main_area, text="Add Task", command=self.add_task)
+        self.add_button.grid(row=1, column=0, padx=10)
+
+        self.edit_button = ttk.Button(self.main_area, text="Edit Task", command=self.edit_task)
+        self.edit_button.grid(row=1, column=1, padx=10)
+
+        self.delete_button = ttk.Button(self.main_area, text="Delete Task", command=self.delete_task)
+        self.delete_button.grid(row=1, column=2, padx=10)
+
+        self.complete_button = ttk.Button(self.main_area, text="Mark as Completed", command=self.mark_as_completed)
+        self.complete_button.grid(row=1, column=3, padx=10)
+
+        self.menu = tk.Menu(root)
+        self.root.config(menu=self.menu)
+
+        self.file_menu = tk.Menu(self.menu, tearoff=False)
+        self.menu.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Save", command=self.save_tasks)
         self.file_menu.add_command(label="Load", command=self.load_tasks)
-        self.file_menu.add_separator()
-        self.file_menu.add_command(label="Exit", command=self.root.quit)
         
+        # Priority selection
+        self.priority_label = ttk.Label(self.sidebar, text="Select Priority")
+        self.priority_label.grid(row=0, column=0, pady=10)
+
+        self.priority_combobox = ttk.Combobox(self.sidebar, values=["Low", "Medium", "High"])
+        self.priority_combobox.grid(row=1, column=0, pady=10)
+
+        # Calendar for setting deadlines
+        self.calendar_label = ttk.Label(self.sidebar, text="Select Deadline")
+        self.calendar_label.grid(row=2, column=0, pady=10)
+
+        self.calendar = Calendar(self.sidebar, selectmode='day')
+        self.calendar.grid(row=3, column=0, pady=10)
+
+    def on_start_drag(self, event):
+        self.start_index = self.task_listbox.nearest(event.y)
+
+    def on_dragging(self, event):
+        self.dragging_index = self.task_listbox.nearest(event.y)
+        if self.dragging_index != self.start_index:
+            self.task_listbox.delete(self.start_index)
+            task = self.tasks.pop(self.start_index)
+            self.tasks.insert(self.dragging_index, task)
+            self.update_task_listbox()
+            self.task_listbox.select_set(self.dragging_index)
+            self.start_index = self.dragging_index
+
+    def on_drop(self, event):
+        self.update_task_listbox()
     def add_task(self):
-        # Dialog to get task details
-        title = simpledialog.askstring("Add Task", "Enter task title:")
-        if title:
-            priority = simpledialog.askstring("Add Task", "Enter priority (High/Medium/Low):")
-            if priority:
-                deadline = simpledialog.askstring("Add Task", "Enter task deadline (YYYY-MM-DD):")
-                if deadline:
-                    # Assign a sequential number to the task
-                    task_number = len(self.tasks) + 1
-                    task = f"{task_number}. {title} - {priority} - {deadline}"
-                    self.tasks.append(task)
-                    self.task_listbox.insert(tk.END, task)
-        
+        task_title = simpledialog.askstring("Add Task", "Enter task title:")
+        task_priority = self.priority_combobox.get()
+        task_deadline = self.calendar.get_date()
+        if task_title and task_deadline:
+            self.tasks.append({"title": task_title, "deadline": task_deadline, "priority": task_priority, "completed": False})
+            self.update_task_listbox()
+
     def edit_task(self):
         selected_task_index = self.task_listbox.curselection()
         if selected_task_index:
-            selected_task_index = selected_task_index[0]
-            selected_task = self.tasks[selected_task_index]
-            
-            # Extract the task number from the selected task
-            task_number = selected_task.split(".")[0]
-            
-            # Dialog to edit task details
-            new_title = simpledialog.askstring("Edit Task", "Edit task title:", initialvalue=selected_task.split(" - ")[0].split(". ")[1])
-            if new_title:
-                new_priority = simpledialog.askstring("Edit Task", "Edit priority (High/Medium/Low):", initialvalue=selected_task.split(" - ")[1])
-                if new_priority:
-                    new_deadline = simpledialog.askstring("Edit Task", "Edit task deadline (YYYY-MM-DD):", initialvalue=selected_task.split(" - ")[2])
-                    if new_deadline:
-                        updated_task = f"{task_number}. {new_title} - {new_priority} - {new_deadline}"
-                        self.tasks[selected_task_index] = updated_task
-                        self.task_listbox.delete(selected_task_index)
-                        self.task_listbox.insert(selected_task_index, updated_task)
-        
+            task_index = selected_task_index[0]
+            task = self.tasks[task_index]
+            new_title = simpledialog.askstring("Edit Task", "Enter new title:", initialvalue=task["title"])
+            new_priority = self.priority_combobox.get()
+            new_deadline = self.calendar.get_date()
+            if new_title and new_deadline:
+                self.tasks[task_index] = {"title": new_title, "deadline": new_deadline, "priority": new_priority, "completed": task["completed"]}
+                self.update_task_listbox()
+
     def delete_task(self):
         selected_task_index = self.task_listbox.curselection()
         if selected_task_index:
-            selected_task_index = selected_task_index[0]
-            self.task_listbox.delete(selected_task_index)
-            del self.tasks[selected_task_index]
-            
-            # Reassign task numbers after deletion
-            self.reassign_task_numbers()
-        
-    def reassign_task_numbers(self):
-        # Clear the listbox
+            task_index = selected_task_index[0]
+            del self.tasks[task_index]
+            self.update_task_listbox()
+
+    def mark_as_completed(self):
+        selected_task_index = self.task_listbox.curselection()
+        if selected_task_index:
+            task_index = selected_task_index[0]
+            self.tasks[task_index]["completed"] = True
+            self.update_task_listbox()
+
+    def update_task_listbox(self):
         self.task_listbox.delete(0, tk.END)
-        
-        # Reassign numbers to tasks
-        for i, task in enumerate(self.tasks):
-            task_parts = task.split(". ", 1)
-            if len(task_parts) > 1:
-                new_task = f"{i + 1}. {task_parts[1]}"
-                self.tasks[i] = new_task
-                self.task_listbox.insert(tk.END, new_task)
-        
+        for task in self.tasks:
+            status = "Completed" if task["completed"] else "Pending"
+            self.task_listbox.insert(tk.END, f"{task['title']} (Priority: {task['priority']}, Deadline: {task['deadline']}, Status: {status})")
+
     def save_tasks(self):
-        with open("tasks.txt", "w") as file:
-            for task in self.tasks:
-                file.write(task + "\n")
-        messagebox.showinfo("Save", "Tasks saved successfully!")
-        
+        file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+        if file_path:
+            with open(file_path, 'w') as file:
+                json.dump(self.tasks, file)
+
     def load_tasks(self):
-        try:
-            with open("tasks.txt", "r") as file:
-                self.tasks = [line.strip() for line in file.readlines()]
-                self.task_listbox.delete(0, tk.END)
-                for task in self.tasks:
-                    self.task_listbox.insert(tk.END, task)
-            messagebox.showinfo("Load", "Tasks loaded successfully!")
-        except FileNotFoundError:
-            messagebox.showerror("Load", "No saved tasks found!")
-    
-    def convert_to_roman(self):
-        # Get the text from the data box
-        text = self.data_text.get("1.0", tk.END).strip()
-        lines = text.split("\n")
-        
-        # Convert numbers to Roman numerals
-        roman_text = ""
-        for line in lines:
-            try:
-                num = int(line)
-                roman_text += to_roman(num) + "\n"
-            except ValueError:
-                roman_text += line + "\n"
-        
-        # Update the data box with Roman numerals
-        self.data_text.delete("1.0", tk.END)
-        self.data_text.insert(tk.END, roman_text)
-    
-    def set_deadline(self):
-        # Get the deadline from the entry widget
-        deadline = self.deadline_entry.get()
-        if deadline:
-            messagebox.showinfo("Deadline Set", f"Deadline set to: {deadline}")
-        else:
-            messagebox.showwarning("Input Error", "Please enter a deadline.")
-    
-    def filter_all_tasks(self):
-        # Show all tasks
-        self.task_listbox.delete(0, tk.END)
-        for task in self.tasks:
-            self.task_listbox.insert(tk.END, task)
-    
-    def filter_tasks_by_priority(self, priority):
-        # Filter tasks by priority
-        self.task_listbox.delete(0, tk.END)
-        for task in self.tasks:
-            if f" - {priority} - " in task:
-                self.task_listbox.insert(tk.END, task)
-    
-    def on_drag_start(self, event):
-        # Get the index of the selected task
-        self.drag_index = self.task_listbox.nearest(event.y)
-    
-    def on_drag_motion(self, event):
-        # Move the task to the new position
-        new_index = self.task_listbox.nearest(event.y)
-        if new_index != self.drag_index:
-            task = self.tasks.pop(self.drag_index)
-            self.tasks.insert(new_index, task)
-            self.task_listbox.delete(self.drag_index)
-            self.task_listbox.insert(new_index, task)
-            self.drag_index = new_index
-    
-    def on_drag_release(self, event):
-        # Reassign task numbers after drag-and-drop
-        self.reassign_task_numbers()
+        file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+        if file_path:
+            with open(file_path, 'r') as file:
+                self.tasks = json.load(file)
+            self.update_task_listbox()
 
 if __name__ == "__main__":
-    root = ttk.Window(themename="cosmo")
-    app = TaskManagerApp(root)
+    root = tk.Tk()
+    app = TaskManager(root)
     root.mainloop()
