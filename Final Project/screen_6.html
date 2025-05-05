@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help & Feedback - Smart Route Optimizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        header {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            font-size: 20px;
+        }
+
+        .container {
+            margin: 20px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #popup {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        #popup button {
+            margin-top: 10px;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>Help & Feedback</header>
+
+    <div class="container">
+        <h3>Submit Feedback or Report an Issue</h3>
+        <textarea id="feedback" placeholder="Write your feedback or complaint here..."></textarea>
+        <button onclick="submitFeedback()">Submit</button>
+    </div>
+
+    <div id="popup">
+        <p><strong>Thank You!</strong></p>
+        <p>Your feedback has been recorded successfully.</p>
+        <button onclick="closePopup()">Done</button>
+    </div>
+
+    <script>
+        function submitFeedback() {
+            let feedbackText = document.getElementById("feedback").value;
+            if (feedbackText.trim() === "") {
+                alert("Please enter your feedback before submitting.");
+                return;
+            }
+            document.getElementById("popup").style.display = "block";
+            document.getElementById("feedback").value = "";
+        }
+
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Route Optimizer - Notifications</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+        }
+
+        #sidebar {
+            width: 250px;
+            background: #007bff;
+            color: white;
+            position: fixed;
+            height: 100vh;
+            padding-top: 20px;
+            left: -250px;
+            transition: 0.3s;
+        }
+
+        #sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #sidebar ul li {
+            padding: 15px;
+            cursor: pointer;
+        }
+
+        #sidebar ul li:hover {
+            background: #0056b3;
+        }
+
+        #menu-btn {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #map-container {
+            width: 100%;
+            height: 100vh;
+            margin-left: 0;
+            transition: 0.3s;
+        }
+
+        #popup {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        #popup button {
+            margin-top: 10px;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button id="menu-btn" onclick="toggleMenu()">☰ Menu</button>
+
+    <div id="sidebar">
+        <ul>
+            <li>Home</li>
+            <li>Recent Orders</li>
+            <li>Earnings</li>
+            <li>Notifications</li>
+            <li>Inbox</li>
+            <li>Account Settings</li>
+            <li>Help & Feedback</li>
+            <li>Log Out</li>
+        </ul>
+    </div>
+
+    <div id="map-container"></div>
+
+    <div id="popup">
+        <p><strong>Well Done!</strong></p>
+        <p>We will notify you of orders before the schedule.</p>
+        <button onclick="closePopup()">Done</button>
+    </div>
+
+    <script>
+        let map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map-container"), {
+                center: { lat: 33.6844, lng: 73.0479 }, // Default to Rawalpindi
+                zoom: 12
+            });
+        }
+
+        function toggleMenu() {
+            const sidebar = document.getElementById("sidebar");
+            sidebar.style.left = sidebar.style.left === "-250px" ? "0" : "-250px";
+        }
+
+        function showPopup() {
+            document.getElementById("popup").style.display = "block";
+        }
+
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+        }
+
+        // Simulating an action that triggers a pop-up notification
+        setTimeout(showPopup, 2000);
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+
+</body>
+
+</html>

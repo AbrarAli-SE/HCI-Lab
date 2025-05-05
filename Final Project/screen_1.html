@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Route Optimizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            font-size: 20px;
+        }
+        #map-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 10px;
+        }
+        .info {
+            margin-top: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.2);
+            display: inline-block;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <header>Smart Route Optimizer</header>
+    
+    <div id="map-container"></div>
+    
+    <div class="info">
+        <p><strong>Start Location:</strong> <span id="start-location">None</span></p>
+        <p><strong>End Location:</strong> <span id="end-location">None</span></p>
+        <button onclick="resetLocations()">Reset Locations</button>
+    </div>
+
+    <script>
+        let map;
+        let startMarker = null;
+        let endMarker = null;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map-container"), {
+                center: { lat: 33.6844, lng: 73.0479 }, // Default to Rawalpindi
+                zoom: 12
+            });
+
+            map.addListener("click", function(event) {
+                if (!startMarker) {
+                    startMarker = new google.maps.Marker({
+                        position: event.latLng,
+                        map: map,
+                        title: "Start Location"
+                    });
+                    document.getElementById("start-location").innerText = 
+                        event.latLng.lat().toFixed(5) + ", " + event.latLng.lng().toFixed(5);
+                } else if (!endMarker) {
+                    endMarker = new google.maps.Marker({
+                        position: event.latLng,
+                        map: map,
+                        title: "End Location"
+                    });
+                    document.getElementById("end-location").innerText = 
+                        event.latLng.lat().toFixed(5) + ", " + event.latLng.lng().toFixed(5);
+                }
+            });
+        }
+
+        function resetLocations() {
+            if (startMarker) startMarker.setMap(null);
+            if (endMarker) endMarker.setMap(null);
+            startMarker = null;
+            endMarker = null;
+            document.getElementById("start-location").innerText = "None";
+            document.getElementById("end-location").innerText = "None";
+        }
+    </script>
+    
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</body>
+</html>
